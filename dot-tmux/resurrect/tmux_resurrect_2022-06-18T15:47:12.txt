@@ -1,9 +1,0 @@
-pane	0	0	:zsh	1	:*	0	:/Users/apple/.config/nvim	1	zsh	:
-pane	0	1	:code	0	:-	0	:/Users/apple/.config/nvim	1	nvim	:nvim init.vim
-pane	0	2	:java	0	:	0	:/Users/apple/.config/nvim	1	nvim	:nvim .
-pane	0	3	:nvim	0	:	0	:/Users/apple/.config/nvim	1	nvim	:nvim plug_init.vim
-window	0	0	1	:*	be3e,178x53,0,0,1
-window	0	1	0	:-	be3f,178x53,0,0,2
-window	0	2	0	:	c460,255x74,0,0,3
-window	0	3	0	:	be41,178x53,0,0,4
-state	0	
