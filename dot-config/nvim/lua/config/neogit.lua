@@ -1,7 +1,8 @@
 local M = {}
 
 function M.setup()
-  require("neogit").setup { integrations = { diffview = true } }
+  local neogit = require "neogit"
+  neogit.setup {}
 end
 
 return M

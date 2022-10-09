@@ -1,78 +1,72 @@
 local M = {}
 
-function M.nvim_dap_setup()
-  -- DAPInstall
-  local dap_install = require "dap-install"
-  dap_install.setup {
-    installation_path = vim.fn.stdpath "data" .. "/dapinstall/",
+local function configure()
+  -- local dap_install = require "dap-install"
+  -- dap_install.setup {
+  --   installation_path = vim.fn.stdpath "data" .. "/dapinstall/",
+  -- }
+
+  local dap_breakpoint = {
+    error = {
+      text = "🟥",
+      texthl = "LspDiagnosticsSignError",
+      linehl = "",
+      numhl = "",
+    },
+    rejected = {
+      text = "",
+      texthl = "LspDiagnosticsSignHint",
+      linehl = "",
+      numhl = "",
+    },
+    stopped = {
+      text = "⭐️",
+      texthl = "LspDiagnosticsSignInformation",
+      linehl = "DiagnosticUnderlineInfo",
+      numhl = "LspDiagnosticsSignInformation",
+    },
   }
 
-  -- telescope-dap
-  require("telescope").load_extension "dap"
+  vim.fn.sign_define("DapBreakpoint", dap_breakpoint.error)
+  vim.fn.sign_define("DapStopped", dap_breakpoint.stopped)
+  vim.fn.sign_define("DapBreakpointRejected", dap_breakpoint.rejected)
+end
 
-  -- nvim-dap-virtual-text. Show virtual text for current frame
-  -- vim.g.dap_virtual_text = true -- deprecated
+local function configure_exts()
+  require("nvim-dap-virtual-text").setup {
+    commented = true,
+  }
 
-  -- nvim-dap-ui
-  require("dapui").setup {}
+  local dap, dapui = require "dap", require "dapui"
+  dapui.setup {} -- use default
+  dap.listeners.after.event_initialized["dapui_config"] = function()
+    dapui.open()
+  end
+  dap.listeners.before.event_terminated["dapui_config"] = function()
+    dapui.close()
+  end
+  dap.listeners.before.event_exited["dapui_config"] = function()
+    dapui.close()
+  end
+end
 
-  -- languages
+local function configure_debuggers()
+  require("config.dap.lua").setup()
   require("config.dap.python").setup()
   require("config.dap.rust").setup()
   require("config.dap.go").setup()
-  require("config.dap.node").setup()
-  require("config.dap.lua").setup()
-
-  -- nvim-dap
-  vim.fn.sign_define("DapBreakpoint", { text = "🟥", texthl = "", linehl = "", numhl = "" })
-  vim.fn.sign_define("DapStopped", { text = "⭐️", texthl = "", linehl = "", numhl = "" })
-
-  vim.g.vimspector_enable_mappings = ""
-end
-
-function M.vimspector_setup()
-  vim.g.vimspector_enable_mappings = "HUMAN"
-
-  vim.g.vimspector_install_gadgets = {
-    "debugpy",
-    "vscode-go",
-    "CodeLLDB",
-    "vscode-node-debug2",
-    "local-lua-debugger-vscode",
-  }
-  vim.cmd [[packadd! vimspector]]
-
-  -- fun! GotoWindow(id)
-  --     call win_gotoid(a:id)
-  --     MaximizerToggle
-  -- endfun
-  -- nmap <leader>vr :VimspectorReset<CR>
-  -- nmap <leader>ve :VimspectorEval
-  -- nmap <leader>vw :VimspectorWatch
-  -- nmap <leader>vo :VimspectorShowOutput
-  -- nmap <leader>vi <Plug>VimspectorBalloonEval
-  -- xmap <leader>vi <Plug>VimspectorBalloonEval
-  -- let g:vimspector_install_gadgets = [ 'debugpy', 'vscode-go', 'CodeLLDB', 'vscode-node-debug2' ]
-
-  -- " Integration with telescope.nvim
-  -- nmap <leader>vc :lua require('telescope').extensions.vimspector.configurations()<CR>
-  -- " Inspection
-  -- nnoremap <leader>vtv :MaximizerToggle!<CR>
-  -- nnoremap <leader>vgc :call GotoWindow(g:vimspector_session_windows.code)<CR>
-  -- nnoremap <leader>vgt :call GotoWindow(g:vimspector_session_windows.tagpage)<CR>
-  -- nnoremap <leader>vgv :call GotoWindow(g:vimspector_session_windows.variables)<CR>
-  -- nnoremap <leader>vgw :call GotoWindow(g:vimspector_session_windows.watches)<CR>
-  -- nnoremap <leader>vgs :call GotoWindow(g:vimspector_session_windows.stack_trace)<CR>
-  -- nnoremap <leader>vgo :call GotoWindow(g:vimspector_session_windows.output)<CR>
+  require("config.dap.csharp").setup()
+  require("config.dap.kotlin").setup()
+  require("config.dap.typescript").setup()
 end
 
 function M.setup()
-  M.nvim_dap_setup()
-  M.vimspector_setup()
-
-  -- key mappings
-  local wk = require "config.whichkey"
-  wk.register_dap()
+  configure() -- Configuration
+  configure_exts() -- Extensions
+  configure_debuggers() -- Debugger
+  require("config.dap.keymaps").setup() -- Keymaps
 end
+
+configure_debuggers()
 
 return M

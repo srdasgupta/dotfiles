@@ -1,110 +1,175 @@
 local M = {}
 
+-- Custom actions
+local transform_mod = require("telescope.actions.mt").transform_mod
+local nvb_actions = transform_mod {
+  file_path = function(prompt_bufnr)
+    -- Get selected entry and the file full path
+    local content = require("telescope.actions.state").get_selected_entry()
+    local full_path = content.cwd .. require("plenary.path").path.sep .. content.value
+
+    -- Yank the path to unnamed and clipboard registers
+    vim.fn.setreg('"', full_path)
+    vim.fn.setreg("+", full_path)
+
+    -- Close the popup
+    require("utils").info "File path is yanked "
+    require("telescope.actions").close(prompt_bufnr)
+  end,
+
+  -- VisiData
+  visidata = function(prompt_bufnr)
+    -- Get the full path
+    local content = require("telescope.actions.state").get_selected_entry()
+    local full_path = content.cwd .. require("plenary.path").path.sep .. content.value
+
+    -- Close the Telescope window
+    require("telescope.actions").close(prompt_bufnr)
+
+    -- Open the file with VisiData
+    local term = require "utils.term"
+    term.open_term("vd " .. full_path, { direction = "float" })
+  end,
+}
+
+-- trouble.nvim
+local trouble = require "trouble.providers.telescope"
+local icons = require "config.icons"
+
 function M.setup()
-  require("telescope").load_extension "fzf"
-  require("telescope").load_extension "project"
-
   local actions = require "telescope.actions"
+  local telescope = require "telescope"
 
-  require("telescope").setup {
-    find_command = {
-      "rg",
-      "--no-heading",
-      "--with-filename",
-      "--line-number",
-      "--column",
-      "--smart-case",
-    },
-    use_less = true,
-    file_previewer = require("telescope.previewers").vim_buffer_cat.new,
-    grep_previewer = require("telescope.previewers").vim_buffer_vimgrep.new,
-    qflist_previewer = require("telescope.previewers").vim_buffer_qflist.new,
-    extensions = {
-      ctags_outline = {
-          --ctags option
-          ctags = {'ctags'},
-          --ctags filetype option
-          ft_opt = {
-              vim = '--vim-kinds=fk',
-              lua = '--lua-kinds=fk',
-          },
-      },
-      arecibo = {
-        ["selected_engine"] = "google",
-        ["url_open_command"] = "xdg-open",
-        ["show_http_headers"] = false,
-        ["show_domain_icons"] = false,
-      },
-      fzf = {
-        override_generic_sorter = false,
-        override_file_sorter = true,
-        case_mode = "smart_case",
-      },
-      media_files = {
-        filetypes = { "png", "jpg", "mp4", "webm", "pdf", "gif" },
-      },
-      bookmarks = {
-        selected_browser = "brave",
-        url_open_command = "xdg-open",
-        url_open_plugin = "open_browser",
-        firefox_profile_name = nil,
-      },
-    },
+  -- Custom previewer
+  local previewers = require "telescope.previewers"
+  local Job = require "plenary.job"
+  local preview_maker = function(filepath, bufnr, opts)
+    filepath = vim.fn.expand(filepath)
+    Job:new({
+      command = "file",
+      args = { "--mime-type", "-b", filepath },
+      on_exit = function(j)
+        local mime_type = vim.split(j:result()[1], "/")[1]
+
+        if mime_type == "text" then
+          -- Check file size
+          vim.loop.fs_stat(filepath, function(_, stat)
+            if not stat then
+              return
+            end
+            if stat.size > 500000 then
+              return
+            else
+              previewers.buffer_previewer_maker(filepath, bufnr, opts)
+            end
+          end)
+        else
+          vim.schedule(function()
+            vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "BINARY FILE" })
+          end)
+        end
+      end,
+    }):sync()
+  end
+
+  telescope.setup {
     defaults = {
+      prompt_prefix = icons.ui.Telescope .. " ",
+      selection_caret = " ",
+      -- path_display = { "smart" },
+      buffer_previewer_maker = preview_maker,
       mappings = {
         i = {
           ["<C-j>"] = actions.move_selection_next,
           ["<C-k>"] = actions.move_selection_previous,
           ["<C-n>"] = actions.cycle_history_next,
           ["<C-p>"] = actions.cycle_history_prev,
+          ["<c-z>"] = trouble.open_with_trouble,
+        },
+      },
+      history = {
+        path = vim.fn.stdpath "data" .. "/telescope_history.sqlite3",
+        limit = 100,
+      },
+    },
+    pickers = {
+      find_files = {
+        theme = "ivy",
+        mappings = {
+          n = {
+            ["y"] = nvb_actions.file_path,
+            ["s"] = nvb_actions.visidata,
+          },
+          i = {
+            ["<C-y>"] = nvb_actions.file_path,
+            ["<C-s>"] = nvb_actions.visidata,
+          },
+        },
+        hidden = true,
+        find_command = { "rg", "--files", "--hidden", "-g", "!.git" },
+      },
+      git_files = {
+        theme = "dropdown",
+        mappings = {
+          n = {
+            ["y"] = nvb_actions.file_path,
+            ["s"] = nvb_actions.visidata,
+          },
+          i = {
+            ["<C-y>"] = nvb_actions.file_path,
+            ["<C-s>"] = nvb_actions.visidata,
+          },
         },
       },
     },
+    extensions = {
+      arecibo = {
+        ["selected_engine"] = "google",
+        ["url_open_command"] = "xdg-open",
+        ["show_http_headers"] = false,
+        ["show_domain_icons"] = false,
+      },
+      media_files = {
+        filetypes = { "png", "webp", "jpg", "jpeg", "pdf", "mp4", "webm" },
+        find_cmd = "fd",
+      },
+      bookmarks = {
+        selected_browser = "firefox",
+        url_open_command = nil,
+        url_open_plugin = "open_browser",
+        full_path = true,
+        firefox_profile_name = nil,
+      },
+      project = {
+        hidden_files = false,
+        theme = "dropdown",
+      },
+      -- aerial = {
+      --   show_nesting = true,
+      -- },
+    },
   }
 
-  -- require('telescope').load_extension('snippets')
-  -- require('telescope').load_extension('hop')
+  require("neoclip").setup() -- https://github.com/AckslD/nvim-neoclip.lua/issues/5
 
-  require("telescope").load_extension "bookmarks"
-  require("telescope").load_extension "neoclip"
-  require("telescope").load_extension "zoxide"
-  require("telescope").load_extension "ultisnips"
-  require("telescope").load_extension "repo"
-  require("telescope").load_extension "gh"
-  require("telescope").load_extension "arecibo"
-  require("telescope").load_extension "media_files"
-  require("telescope").load_extension "frecency"
-  require("telescope").load_extension "gkeep"
-  require("telescope").load_extension "file_browser"
-  require('telescope').load_extension "ctags_outline"
-  require('telescope').load_extension "git_worktree"
-  require('telescope').load_extension "harpoon"
-  require('telescope').load_extension "gradle"
-  require('telescope').load_extension "terraform_doc"
-
-  M.search_dotfiles = function()
-    require("telescope.builtin").find_files {
-      prompt_title = "< VimRC >",
-      cwd = "$HOME/workspace/alpha2phi/dotfiles/",
-    }
-  end
-
-  M.switch_projects = function()
-    require("telescope.builtin").find_files {
-      prompt_title = "< Switch Project >",
-      cwd = "$HOME/workspace/dev/",
-    }
-  end
-
-  M.git_branches = function()
-    require("telescope.builtin").git_branches {
-      attach_mappings = function(prompt_bufnr, map)
-        map("i", "<c-d>", actions.git_delete_branch)
-        map("n", "<c-d>", actions.git_delete_branch)
-        return true
-      end,
-    }
-  end
+  telescope.load_extension "fzf"
+  telescope.load_extension "project" -- telescope-project.nvim
+  telescope.load_extension "repo"
+  telescope.load_extension "file_browser"
+  telescope.load_extension "projects" -- project.nvim
+  telescope.load_extension "dap"
+  telescope.load_extension "frecency"
+  telescope.load_extension "neoclip"
+  telescope.load_extension "smart_history"
+  telescope.load_extension "arecibo"
+  telescope.load_extension "media_files"
+  telescope.load_extension "bookmarks"
+  telescope.load_extension "aerial"
+  telescope.load_extension "gh"
+  telescope.load_extension "zoxide"
+  telescope.load_extension "cder"
+  -- telescope.load_extension "ui-select"
+  -- telescope.load_extension "flutter" -- Flutter
 end
 
 return M

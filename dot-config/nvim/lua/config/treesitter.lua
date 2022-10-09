@@ -1,24 +1,40 @@
 local M = {}
 
 function M.setup()
-  local parser_configs = require("nvim-treesitter.parsers").get_parser_configs()
+  local swap_next, swap_prev = (function()
+    local swap_objects = {
+      p = "@parameter.inner",
+      f = "@function.outer",
+      c = "@class.outer",
+    }
 
-  parser_configs.norg = {
-    install_info = {
-      url = "https://github.com/nvim-neorg/tree-sitter-norg",
-      files = { "src/parser.c", "src/scanner.cc" },
-      branch = "main",
-    },
-  }
+    local n, p = {}, {}
+    for key, obj in pairs(swap_objects) do
+      n[string.format("<Leader>cx%s", key)] = obj
+      p[string.format("<Leader>cX%s", key)] = obj
+    end
+
+    return n, p
+  end)()
 
   require("nvim-treesitter.configs").setup {
-    ensure_installed = "maintained", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
+    -- One of "all", "maintained" (parsers with maintainers), or a list of languages
+    ensure_installed = "all",
+
+    -- Install languages synchronously (only applied to `ensure_installed`)
+    sync_install = false,
+
     highlight = {
+      -- `false` will disable the whole extension
       enable = true,
-      disable = {},
-      additional_vim_regex_highlighting = true,
-      -- custom_captures = {["new_import"] = "CustomImportName"}
     },
+
+    rainbow = {
+      enable = true,
+      extended_mode = true,
+      max_file_lines = nil,
+    },
+
     incremental_selection = {
       enable = true,
       keymaps = {
@@ -28,14 +44,26 @@ function M.setup()
         node_decremental = "grm",
       },
     },
-    indent = { enable = true },
-    playground = {
+
+    indent = { enable = true, disable = { "python", "java", "rust", "lua" } },
+
+    -- vim-matchup
+    matchup = {
       enable = true,
-      disable = {},
-      updatetime = 25, -- Debounced time for highlighting nodes in the playground from source code
-      persist_queries = false, -- Whether the query persists across vim sessions
     },
-    rainbow = { enable = true, extended_mode = true },
+
+    -- nvim-treesitter-textsubjects
+    textsubjects = {
+      enable = true,
+      prev_selection = ",", -- (Optional) keymap to select the previous selection
+      keymaps = {
+        ["."] = "textsubjects-smart",
+        [";"] = "textsubjects-container-outer",
+        ["i;"] = "textsubjects-container-inner",
+      },
+    },
+
+    -- nvim-treesitter-textobjects
     textobjects = {
       select = {
         enable = true,
@@ -48,9 +76,27 @@ function M.setup()
           ["af"] = "@function.outer",
           ["if"] = "@function.inner",
           ["ac"] = "@class.outer",
-          ["ic"] = "@class.inner",
+          ["ic"] = { query = "@class.inner", desc = "Select inner part of a class region" },
+        },
+        selection_modes = {
+          ["@parameter.outer"] = "v", -- charwise
+          ["@function.outer"] = "V", -- linewise
+          ["@class.outer"] = "<c-v>", -- blockwise
         },
       },
+
+      swap = {
+        enable = true,
+        swap_next = swap_next,
+        swap_previous = swap_prev,
+        -- swap_next = {
+        --   ["<leader>cx"] = "@parameter.inner",
+        -- },
+        -- swap_previous = {
+        --   ["<leader>cX"] = "@parameter.inner",
+        -- },
+      },
+
       move = {
         enable = true,
         set_jumps = true, -- whether to set jumps in the jumplist
@@ -71,49 +117,52 @@ function M.setup()
           ["[]"] = "@class.outer",
         },
       },
-      swap = {
-        enable = true,
-        swap_next = { ["<Leader>rx"] = "@parameter.inner" },
-        swap_previous = { ["<Leader>rX"] = "@parameter.inner" },
-      },
-      lsp_interop = {
-        enable = true,
-        border = "none",
-        peek_definition_code = {
-          ["df"] = "@function.outer",
-          ["dF"] = "@class.outer",
-        },
-      },
-      -- refactor = {
-      --     highlight_definitions = {enable = true},
-      --     highlight_current_scope = {enable = true},
-      --     smart_rename = {
-      --         enable = true,
-      --         keymaps = {smart_rename = "grr"}
-      --         -- keymaps = {smart_rename = "<leader>rn"}
-      --     },
-      --     navigation = {
-      --         enable = true,
-      --         keymaps = {
-      --             goto_definition = "gnd",
-      --             list_definitions = "gnD",
-      --             list_definitions_toc = "gO",
-      --             goto_next_usage = "<a-*>",
-      --             goto_previous_usage = "<a-#>"
-      --         }
-      --     }
-      -- }
+
+      -- lsp_interop = {
+      --   enable = true,
+      --   border = "none",
+      --   peek_definition_code = {
+      --     ["<leader>cf"] = "@function.outer",
+      --     ["<leader>cF"] = "@class.outer",
+      --   },
+      -- },
     },
-    context_commentstring = { enable = true, enable_autocmd = false },
-    textsubjects = {
+
+    -- endwise
+    endwise = {
       enable = true,
-      keymaps = {
-        ["."] = "textsubjects-smart",
-        [";"] = "textsubjects-container-outer",
-      },
     },
-    matchup = { enable = true },
+
+    -- autotag
+    autotag = {
+      enable = true,
+    },
+
+    -- context_commentstring
+    context_commentstring = {
+      enable = true,
+      --enable_autocmd = false,
+    },
+
+    -- indent
+    -- yati = { enable = true },
+
+    playground = {
+      enable = true,
+      disable = {},
+      updatetime = 25, -- Debounced time for highlighting nodes in the playground from source code
+      persist_queries = false, -- Whether the query persists across vim sessions
+    },
+
+    query_linter = {
+      enable = true,
+      use_virtual_text = true,
+      lint_events = { "BufWrite", "CursorHold" },
+    },
   }
+  -- require("treesitter-context").setup {
+  --   enable = true,
+  -- }
 end
 
 return M

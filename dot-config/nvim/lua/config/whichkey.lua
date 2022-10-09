@@ -1,486 +1,465 @@
 local M = {}
 
+local whichkey = require "which-key"
+local legendary = require "legendary"
+local next = next
+
+local conf = {
+  window = {
+    border = "single", -- none, single, double, shadow
+    position = "bottom", -- bottom, top
+  },
+}
+whichkey.setup(conf)
+
 local opts = {
-  mode = "n",
+  mode = "n", -- Normal mode
   prefix = "<leader>",
-  buffer = nil,
-  silent = true,
-  noremap = true,
-  nowait = true,
+  buffer = nil, -- Global mappings. Specify a buffer number for buffer local mappings
+  silent = true, -- use `silent` when creating keymaps
+  noremap = true, -- use `noremap` when creating keymaps
+  nowait = false, -- use `nowait` when creating keymaps
 }
 
-local vopts = {
-  mode = "v",
+local v_opts = {
+  mode = "v", -- Visual mode
   prefix = "<leader>",
-  buffer = nil,
-  silent = false,
-  noremap = true,
-  nowait = true,
+  buffer = nil, -- Global mappings. Specify a buffer number for buffer local mappings
+  silent = true, -- use `silent` when creating keymaps
+  noremap = true, -- use `noremap` when creating keymaps
+  nowait = false, -- use `nowait` when creating keymaps
 }
 
-local xopts = {
-  mode = "x",
-  prefix = "<leader>",
-  buffer = nil,
-  silent = true,
-  noremap = true,
-  nowait = true,
-}
+local function normal_keymap()
+  local keymap_f = nil -- File search
+  local keymap_p = nil -- Project search
 
-local mappings = {
-  ["w"] = { "<Cmd>w!<Cr>", "Save" },
-  ["q"] = { "<Cmd>q!<Cr>", "Quit" },
+  keymap_f = {
+    name = "Find",
+    f = { "<cmd>lua require('utils.finder').find_files()<cr>", "Files" },
+    d = { "<cmd>lua require('utils.finder').find_dotfiles()<cr>", "Dotfiles" },
+    b = { "<cmd>lua require('telescope.builtin').buffers()<cr>", "Buffers" },
+    h = { "<cmd>lua require('telescope.builtin').help_tags()<cr>", "Help" },
+    m = { "<cmd>lua require('telescope.builtin').marks()<cr>", "Marks" },
+    o = { "<cmd>lua require('telescope.builtin').oldfiles()<cr>", "Old Files" },
+    g = { "<cmd>lua require('telescope.builtin').live_grep()<cr>", "Live Grep" },
+    c = { "<cmd>lua require('telescope.builtin').commands()<cr>", "Commands" },
+    r = { "<cmd>lua require'telescope'.extensions.file_browser.file_browser()<cr>", "File Browser" },
+    w = { "<cmd>lua require('telescope.builtin').current_buffer_fuzzy_find()<cr>", "Current Buffer" },
+    e = { "<cmd>NvimTreeToggle<cr>", "Explorer" },
+  }
 
-  -- System
-  ["z"] = {
-    name = "System",
-    b = {
-      "<Cmd>hi Normal ctermbg=none guibg=none<CR>",
-      "Transparent background",
-    },
-    s = { ":<C-u>SaveSession<Cr>", "Save session" },
-    l = { ":<C-u>SearchSession<Cr>", "Load session" },
-    c = { "<Cmd>Telescope colorscheme<Cr>", "Color scheme" },
-    h = { "<Cmd>ToggleTerm<CR>", "New horizontal terminal" },
-    -- h = { "<Cmd>15sp +term<CR>", "New horizontal terminal" },
-    t = { "<Cmd>terminal<CR>", "New terminal" },
-    e = { "!!$SHELL<CR>", "Execute line" },
-    z = {
-      "<Cmd>lua require('config.telescope').search_dotfiles()<CR>",
-      "Configuration",
-    },
-    r = { "<Cmd>luafile %<Cr>", "Reload lua file" },
-    m = { "<Cmd>messages<Cr>", "Messages" },
-    p = { "<Cmd>messages clear<Cr>", "Clear messages" },
-    -- p = {
-    --   ":let &runtimepath.=','.escape(expand('%:p:h'), '\\,')<Cr>",
-    --   "Set runtime path",
-    -- },
-    f = { "<Cmd>FloatermNew<Cr>", "Floating terminal" },
-    i = { "<Cmd>PackerUpdate<Cr>", "Packer update" },
-    y = { "<Cmd>Telescope neoclip<Cr>", "Clipboard manager" },
-    x = { "<Cmd>Telescope bookmarks<Cr>", "Browser bookmarks" },
-  },
-
-  -- Buffer
-  b = {
-    name = "Buffer",
-    -- a = { "<Cmd>%bd|e#|bd#<Cr>", "Delete all buffers" },
-    a = { "<Cmd>BWipeout other<Cr>", "Delete all buffers" },
-    d = { "<Cmd>bd<Cr>", "Delete current buffer" },
-    l = { "<Cmd>ls<Cr>", "List buffers" },
-    n = { "<Cmd>bn<Cr>", "Next buffer" },
-    p = { "<Cmd>bp<Cr>", "Previous buffer" },
-    f = { "<Cmd>bd!<Cr>", "Force delete current buffer" },
-  },
-
-  -- Jump
-  j = {
-    name = "Jump",
-    a = { "<Cmd>lua require('harpoon.mark').add_file()<Cr>", "Add" },
-    m = { "<Cmd>lua require('harpoon.ui').toggle_quick_menu()<Cr>", "Menu" },
-    c = { "<Cmd>lua require('harpoon.cmd-ui').toggle_quick_menu()<Cr>", "Menu" },
-  },
-  ["1"] = { "<Cmd>lua require('harpoon.ui').nav_file(1) <Cr>", "Jump 1" },
-  ["2"] = { "<Cmd>lua require('harpoon.ui').nav_file(2) <Cr>", "Jump 2" },
-  ["3"] = { "<Cmd>lua require('harpoon.ui').nav_file(3) <Cr>", "Jump 3" },
-  ["4"] = { "<Cmd>lua require('harpoon.term').gotoTerminal(1)<Cr>", "Terminal" },
-  ["5"] = { "<Cmd>lua require('harpoon.term').sendCommand(1,1)<Cr>", "Command 1" },
-  ["6"] = { "<Cmd>lua require('harpoon.term').sendCommand(1,2)<Cr>", "Command 2" },
-
-  -- Quick fix
-  c = {
-    name = "Quickfix",
-    o = { "<Cmd>copen<Cr>", "Open quickfix" },
-    c = { "<Cmd>cclose<Cr>", "Close quickfix" },
-    n = { "<Cmd>cnext<Cr>", "Next quickfix" },
-    p = { "<Cmd>cprev<Cr>", "Previous quickfix" },
-    x = { "<Cmd>cex []<Cr>", "Clear quickfix" },
-    t = { "<Cmd>BqfAutoToggle<Cr>", "Toggle preview" },
-  },
-
-  -- File
-  f = {
-    name = "File",
-    b = { "<Cmd>Telescope buffers<Cr>", "Search buffers" },
-    c = { "<Cmd>Telescope current_buffer_fuzzy_find<Cr>", "Search current buffer" },
-    f = { "<Cmd>Telescope git_files<Cr>", "Git files" },
-    g = { "<Cmd>Telescope live_grep<Cr>", "Live grep" },
-    h = { "<Cmd>Telescope help_tags<Cr>", "Help" },
-    p = { "<Cmd>Telescope file_browser<Cr>", "Pop-up file browser" },
-    o = { "<Cmd>Telescope oldfiles<Cr>", "Old files" },
-    m = { "<Cmd>Telescope marks<Cr>", "Mark" },
-    n = { "<Cmd>ene <BAR> startinsert <Cr>", "New file" },
-    r = { "<Cmd>Telescope frecency<Cr>", "Recent file" },
-    s = { "<Cmd>Telescope symbols<Cr>", "Symbols" },
-    a = { "<Cmd>xa<Cr>", "Save all & quit" },
-    e = { "<Cmd>NvimTreeToggle<CR>", "Explorer" },
-    z = { "<Cmd>lefta 20vsp ~/workspace/dev/alpha2phi<CR>", "Netrw" },
-    v = { "<Cmd>Telescope media_files<CR>", "View media files" },
-    t = { "<Cmd>Telescope<CR>", "Telescope" },
-    l = { "<Cmd>e!<CR>", "Reload file" },
-    j = { "<Cmd>Telescope zoxide list<CR>", "Jump to folder" },
-  },
-
-  -- Git
-  g = {
-    name = "Source code",
-    a = { "<Cmd>Telescope repo list<Cr>", "All repositories" },
-    s = { "<Cmd>Git<Cr>", "Git status" },
-    p = { "<Cmd>Git push<Cr>", "Git push" },
-    b = { "<Cmd>Git branch<Cr>", "Git branch" },
-    d = { "<Cmd>Gvdiffsplit<Cr>", "Git diff" },
-    f = { "<Cmd>Git fetch --all<Cr>", "Git fetch" },
-    m = { "<Cmd>GitMessenger<Cr>", "Git messenger" },
-    n = { "<Cmd>Neogit<Cr>", "NeoGit" },
-    v = { "<Cmd>DiffviewOpen<Cr>", "Diffview open" },
-    c = { "<Cmd>DiffviewClose<Cr>", "Diffview close" },
-    h = { "<Cmd>DiffviewFileHistory<Cr>", "File history" },
-    ["r"] = {
-      name = "Rebase",
-      u = {
-        "<Cmd>Git rebase upstream/master<Cr>",
-        "Git rebase upstream/master",
-      },
-      o = {
-        "<Cmd>Git rebase origin/master<Cr>",
-        "Git rebase origin/master",
-      },
-    },
-    x = {
-      name = "Diff",
-      ["2"] = { "<Cmd>diffget //2", "Diffget 2" },
-      ["3"] = { "<Cmd>diffget //3", "Diffget 3" },
-    },
-    g = {
-      "<Cmd>DogeGenerate<Cr>",
-      "Generate doc",
-    },
-    y = { name = "Git URL" },
-  },
-
-  -- eSpeak
-  e = { name = "eSpeak", s = { "<Cmd>call tts#Speak()<CR>", "Speak" } },
-
-  -- Project
-  p = {
+  keymap_p = {
     name = "Project",
-    s = {
-      "<Cmd>lua require('config.telescope').switch_projects()<CR>",
-      "Search files",
+    p = { "<cmd>lua require'telescope'.extensions.project.project{display_type = 'full'}<cr>", "List" },
+    s = { "<cmd>lua require'telescope'.extensions.repo.list{}<cr>", "Search" },
+    P = { "<cmd>TermExec cmd='BROWSER=brave yarn dev'<cr>", "Slidev" },
+  }
+
+  local keymap = {
+    ["w"] = { "<cmd>update!<CR>", "Save" },
+    ["q"] = { "<cmd>lua require('utils').quit()<CR>", "Quit" },
+    -- ["t"] = { "<cmd>ToggleTerm<CR>", "Terminal" },
+
+    a = {
+      name = "Attempt",
+      n = { "<Cmd>lua require('attempt').new_select()<Cr>", "New Select" },
+      i = { "<Cmd>lua require('attempt').new_input_ext()<Cr>", "New Input Extension" },
+      r = { "<Cmd>lua require('attempt').run()<Cr>", "Run" },
+      d = { "<Cmd>lua require('attempt').delete_buf()<Cr>", "Delete Buffer" },
+      c = { "<Cmd>lua require('attempt').rename_buf()<Cr>", "Rename Buffer" },
+      s = { "<Cmd>Telescope attempt<Cr>", "Search" },
     },
-    p = {
-      "<Cmd>lua require('telescope').extensions.project.project({})<Cr>",
-      "List projects",
+
+    b = {
+      name = "Buffer",
+      c = { "<Cmd>BDelete this<Cr>", "Close Buffer" },
+      f = { "<Cmd>BDelete! this<Cr>", "Force Close Buffer" },
+      D = { "<Cmd>BWipeout other<Cr>", "Delete All Buffers" },
+      b = { "<Cmd>BufferLinePick<Cr>", "Pick a Buffer" },
+      p = { "<Cmd>BufferLinePickClose<Cr>", "Pick & Close a Buffer" },
+      m = { "<Cmd>JABSOpen<Cr>", "Menu" },
     },
-    r = {
-      "<Cmd>Telescope projects<Cr>",
-      "Recent projects",
+
+    c = {
+      name = "Code",
+      g = { "<cmd>Neogen func<Cr>", "Func Doc" },
+      G = { "<cmd>Neogen class<Cr>", "Class Doc" },
+      d = { "<cmd>DogeGenerate<Cr>", "Generate Doc" },
+      T = { "<cmd>TodoTelescope<Cr>", "TODO" },
+      x = {
+        name = "Swap Next",
+        f = "Function",
+        p = "Parameter",
+        c = "Class",
+      },
+      X = {
+        name = "Swap Previous",
+        f = "Function",
+        p = "Parameter",
+        c = "Class",
+      },
+      -- f = "Select Outer Function",
+      -- F = "Select Outer Class",
     },
-  },
 
-  -- Easymotion
-  ["<Space>"] = { name = "Easymotion" },
-
-  -- Search
-  ["s"] = {
-    name = "Search",
-    w = {
-      "<Cmd>lua require('telescope').extensions.arecibo.websearch()<CR>",
-      "Web search",
+    d = {
+      name = "Debug",
     },
-    s = { "<Cmd>lua require('spectre').open()<CR>", "Search file" },
-    z = { "<Plug>SearchNormal", "Browser search" },
-    v = {
-      "<Cmd>lua require('spectre').open_visual({select_word=true})<CR>",
-      "Visual search",
+
+    -- Database
+    D = {
+      name = "Database",
+      u = { "<Cmd>DBUIToggle<Cr>", "Toggle UI" },
+      f = { "<Cmd>DBUIFindBuffer<Cr>", "Find buffer" },
+      r = { "<Cmd>DBUIRenameBuffer<Cr>", "Rename buffer" },
+      q = { "<Cmd>DBUILastQueryInfo<Cr>", "Last query info" },
     },
-    f = {
-      "viw:lua require('spectre').open_file_search()<Cr>",
-      "Open file search",
+
+    f = keymap_f,
+    p = keymap_p,
+
+    j = {
+      name = "Jump",
+      a = { "<Cmd>lua require('harpoon.mark').add_file()<Cr>", "Add File" },
+      m = { "<Cmd>lua require('harpoon.ui').toggle_quick_menu()<Cr>", "UI Menu" },
+      c = { "<Cmd>lua require('harpoon.cmd-ui').toggle_quick_menu()<Cr>", "Command Menu" },
     },
-    c = { "q:", "Command history" },
-    g = { "q/", "Grep history" },
-    l = { "<Cmd>lua require('utils.cheatsheet').cheatsheet()<CR>", "Search code" },
-    o = { "<Cmd>SymbolsOutline<CR>", "Symbols Outline" },
-    b = { "<Cmd>Telescope current_buffer_fuzzy_find<CR>", "Fuzzy find buffer" },
-    u = { "<Cmd>Telescope ultisnips<CR>", "Search snippets" },
-  },
+    ["0"] = { "<Cmd>2ToggleTerm<Cr>", "ToggleTerm 2" },
+    ["1"] = { "<Cmd>lua require('harpoon.ui').nav_file(1) <Cr>", "File 1" },
+    ["2"] = { "<Cmd>lua require('harpoon.ui').nav_file(2) <Cr>", "File 2" },
+    ["3"] = { "<Cmd>lua require('harpoon.term').gotoTerminal(1)<Cr>", "Terminal 1" },
+    ["4"] = { "<Cmd>lua require('harpoon.term').gotoTerminal(2)<Cr>", "Terminal 2" },
+    ["5"] = { "<Cmd>lua require('harpoon.term').sendCommand(1,1)<Cr>", "Command 1" },
+    ["6"] = { "<Cmd>lua require('harpoon.term').sendCommand(1,2)<Cr>", "Command 2" },
 
-  -- Testing
-  t = {
-    name = "Test",
-    n = { "<Cmd>w<CR>:TestNearest<CR>", "Test nearest" },
-    f = { "<Cmd>w<CR>:TestFile<CR>", "Test file" },
-    s = { "<Cmd>w<CR>:TestSuite<CR>", "Test suite" },
-    l = { "<Cmd>w<CR>:TestLast<CR>", "Test last" },
-    v = { "<Cmd>w<CR>:TestVisit<CR>", "Test visit" },
-  },
+    -- t = {
+    --   name = "Test",
+    --   S = { "<cmd>UltestSummary<cr>", "Summary" },
+    --   a = { "<cmd>Ultest<cr>", "All" },
+    --   c = { "<cmd>UltestClear<cr>", "Clear" },
+    --   d = { "<cmd>UltestDebug<cr>", "Debug" },
+    --   f = { "<cmd>TestFile<cr>", "File" },
+    --   l = { "<cmd>TestLast<cr>", "Last" },
+    --   n = { "<cmd>TestNearest<cr>", "Nearest" },
+    --   o = { "<cmd>UltestOutput<cr>", "Output" },
+    --   s = { "<cmd>TestSuite<cr>", "Suite" },
+    --   v = { "<cmd>TestVisit<cr>", "Visit" },
+    --   p = { "<Plug>PlenaryTestFile", "PlenaryTestFile" },
+    -- },
 
-  -- Run
-  r = {
-    name = "Run",
-    x = "Swap next parameter",
-    X = "Swap previous parameter",
-    s = { "<Cmd>SnipRun<CR>", "Run snippets" },
-  },
+    -- keymap_c.s = { "<cmd>OverseerRun<cr>", "Overseer Run" }
+    -- keymap_c.S = { "<cmd>OverseerToggle!<cr>", "Overseer Toggle" }
+    -- keymap_c.a = { "<cmd>OverseerQuickAction<cr>", "Overseer Quick Action" }
+    -- keymap_c.A = { "<cmd>OverseerTaskAction<cr>", "Overseer Task Action" }
 
-  -- Git signs
-  h = {
-    name = "Git signs",
-    b = "Blame line",
-    p = "Preview hunk",
-    R = "Reset buffer",
-    r = "Reset buffer",
-    s = "Stage hunk",
-    S = "Stage buffer",
-    u = "Undo stage hunk",
-    U = "Reset buffer index",
-  },
-
-  -- Notes
-  n = {
-    name = "Notes",
-    n = {
-      "<Cmd>FloatermNew nvim ~/workspace/dev/notes/<Cr>",
-      "New note",
+    o = {
+      name = "Overseer",
+      C = { "<cmd>OverseerClose<cr>", "OverseerClose" },
+      a = { "<cmd>OverseerTaskAction<cr>", "OverseerTaskAction" },
+      b = { "<cmd>OverseerBuild<cr>", "OverseerBuild" },
+      c = { "<cmd>OverseerRunCmd<cr>", "OverseerRunCmd" },
+      d = { "<cmd>OverseerDeleteBundle<cr>", "OverseerDeleteBundle" },
+      l = { "<cmd>OverseerLoadBundle<cr>", "OverseerLoadBundle" },
+      o = { "<cmd>OverseerOpen!<cr>", "OverseerOpen" },
+      q = { "<cmd>OverseerQuickAction<cr>", "OverseerQuickAction" },
+      r = { "<cmd>OverseerRun<cr>", "OverseerRun" },
+      s = { "<cmd>OverseerSaveBundle<cr>", "OverseerSaveBundle" },
+      t = { "<cmd>OverseerToggle!<cr>", "OverseerToggle" },
     },
-    o = { "<Cmd>GkeepOpen<Cr>", "GKeep Open" },
-    c = { "<Cmd>GkeepClose<Cr>", "GKeep Close" },
-    r = { "<Cmd>GkeepRefresh<Cr>", "GKeep Refresh" },
-    s = { "<Cmd>GkeepSync<Cr>", "GKeep Sync" },
-    p = { "<Cmd>MarkdownPreview<Cr>", "Preview markdown" },
-    z = { "<Cmd>ZenMode<Cr>", "Zen Mode" },
-    h = { "<Cmd>Twilight<Cr>", "Twilight" },
-    g = { "<Cmd>GrammarousCheck<Cr>", "Grammar check" },
-  },
 
-  -- Magma
-  m = {
-    name = "Magma",
-    l = { "<Cmd>MagmaEvaluateLine<Cr>", "Evaluate line" },
-    r = { "<Cmd>MagmaReevaluateCell<Cr>", "Reevaluate Cell" },
-    d = { "<Cmd>MagmaDelete<Cr>", "Delete" },
-    o = { "<Cmd>MagmaShowOutput<Cr>", "Show output" },
-    i = { "<Cmd>MagmaInit<Cr>", "Init" },
-    u = { "<Cmd>MagmaDeinit<Cr>", "Deinit" },
-  },
-
-  -- Database
-  x = {
-    name = "Database",
-    u = { "<Cmd>DBUIToggle<Cr>", "Toggle UI" },
-    f = { "<Cmd>DBUIFindBuffer<Cr>", "Find buffer" },
-    r = { "<Cmd>DBUIRenameBuffer<Cr>", "Rename buffer" },
-    q = { "<Cmd>DBUILastQueryInfo<Cr>", "Last query info" },
-  },
-
-  -- Viewer
-  v = {
-    name = "View",
-    v = { "<Cmd>vsplit term://vd <cfile><CR>", "VisiData" },
-  },
-  -- K = {name = "Cheatsheet"},
-  -- C = {name = "Cheatsheet (toggle comment)"},
-}
-
-local vmappings = {
-  s = {
-    name = "Search",
-    v = { "<Cmd>lua require('spectre').open_visual()<CR>", "Visual search" },
-    b = { "<Plug>SearchVisual", "Browser search" },
-    c = { "<Cmd>lua require('utils.codex').complete()<CR>", "Codex complete" },
-  },
-  h = { name = "Git signs" },
-  e = { name = "eSpeak", s = { "<Cmd>call tts#Speak(1)<CR>", "Speak" } },
-  r = {
-    name = "Run",
-    s = { "<Cmd>lua require'sniprun'.run('v')<CR>", "Run snippets" },
-    r = { "<Esc><Cmd>lua require('telescope').extensions.refactoring.refactors()<CR>", "Refactor" },
-  },
-  g = {
-    name = "Source code",
-    y = { name = "Git URL" },
-  },
-  b = {
-    name = "Buffer",
-    h = { ":fold<CR>", "Hide/fold code" },
-  },
-}
-
-local xmappings = {
-  m = {
-    name = "Magma",
-    e = { "<Cmd><C-u>MagmaEvaluateVisual<Cr>", "Evaluate" },
-  },
-}
-
-local lsp_mappings = {
-
-  l = {
-    name = "LSP",
-    r = { "<Cmd>Lspsaga rename<CR>", "Rename" },
-    u = { "<Cmd>Telescope lsp_references<CR>", "References" },
-    o = { "<Cmd>Telescope lsp_document_symbols<CR>", "Document symbols" },
-    d = { "<Cmd>Telescope lsp_definitions<CR>", "Definition" },
-    a = { "<Cmd>Telescope lsp_code_actions<CR>", "Code actions" },
-    e = { "<Cmd>lua vim.diagnostic.enable()<CR>", "Enable diagnostics" },
-    x = { "<Cmd>lua vim.diagnostic.disable()<CR>", "Disable diagnostics" },
-    n = { "<Cmd>update<CR>:Neoformat<CR>", "Neoformat" },
-    t = { "<Cmd>TroubleToggle<CR>", "Trouble" },
-  },
-
-  -- WIP - refactoring
-  -- nnoremap <silent><leader>chd :Lspsaga hover_doc<CR>
-  -- nnoremap <silent><C-f> <cmd>lua require('lspsaga.action').smart_scroll_with_saga(1)<CR>
-  -- nnoremap <silent><C-b> <cmd>lua require('lspsaga.action').smart_scroll_with_saga(-1)<CR>
-  -- nnoremap <silent><leader>cpd:Lspsaga preview_definition<CR>
-  -- nnoremap <silent> <leader>cld :Lspsaga show_line_diagnostics<CR>
-  -- {'n', '<leader>lds', '<cmd>lua vim.diagnostic.show_line_diagnostics()<CR>' },
-  -- {'n', '<leader>lde', '<cmd>lua vim.diagnostic.enable()<CR>'},
-  -- {'n', '<leader>ldd', '<cmd>lua vim.diagnostic.disable()<CR>'},
-  -- {'n', '<leader>ll', '<cmd>lua vim.diagnostic.set_loclist()<CR>'},
-  -- {'n', '<leader>lca', '<cmd>lua vim.lsp.buf.code_action()<CR>'},
-  -- {'v', '<leader>lcr', '<cmd>lua vim.lsp.buf.range_code_action()<CR>'},
-}
-
-local lsp_mappings_opts = {
-  {
-    "document_formatting",
-    { ["lf"] = { "<Cmd>lua vim.lsp.buf.formatting()<CR>", "Format" } },
-  },
-  {
-    "code_lens",
-    {
-      ["ll"] = {
-        "<Cmd>lua vim.lsp.codelens.refresh()<CR>",
-        "Codelens refresh",
+    t = {
+      name = "Test",
+      a = { "<cmd>lua require('neotest').run.attach()<cr>", "Attach" },
+      f = { "<cmd>lua require('neotest').run.run(vim.fn.expand('%'))<cr>", "Run File" },
+      F = { "<cmd>lua require('neotest').run.run({vim.fn.expand('%'), strategy = 'dap'})<cr>", "Debug File" },
+      l = { "<cmd>lua require('neotest').run.run_last()<cr>", "Run Last" },
+      L = { "<cmd>lua require('neotest').run.run_last({ strategy = 'dap' })<cr>", "Debug Last" },
+      n = { "<cmd>lua require('neotest').run.run()<cr>", "Run Nearest" },
+      N = { "<cmd>lua require('neotest').run.run({strategy = 'dap'})<cr>", "Debug Nearest" },
+      o = { "<cmd>lua require('neotest').output.open({ enter = true })<cr>", "Output" },
+      S = { "<cmd>lua require('neotest').run.stop()<cr>", "Stop" },
+      s = { "<cmd>lua require('neotest').summary.toggle()<cr>", "Summary" },
+      p = { "<Plug>PlenaryTestFile", "PlenaryTestFile" },
+      v = { "<cmd>TestVisit<cr>", "Visit" },
+      x = { "<cmd>TestSuite<cr>", "Suite" },
+      t = {
+        name = "Test",
+        l = { "<cmd>TestLast<cr>", "Run Last" },
+        n = { "<cmd>TestNearest<cr>", "Run Nearest" },
       },
     },
-  },
-  {
-    "code_lens",
-    { ["ls"] = { "<Cmd>lua vim.lsp.codelens.run()<CR>", "Codelens run" } },
-  },
-}
 
-local dap_nvim_dap_mappings = {
-  d = {
-    name = "DAP",
-    b = { "<Cmd>lua require('dap').toggle_breakpoint()<CR>", "Toggle breakpoint" },
-    c = { "<Cmd>lua require('dap').continue()<CR>", "Continue" },
-    s = { "<Cmd>lua require('dap').step_over()<CR>", "Step over" },
-    i = { "<Cmd>lua require('dap').step_into()<CR>", "Step into" },
-    o = { "<Cmd>lua require('dap').step_out()<CR>", "Step out" },
-    u = { "<Cmd>lua require('dapui').toggle()<CR>", "Toggle UI" },
-    p = { "<Cmd>lua require('dap').repl.open()<CR>", "REPL" },
-    e = { '<Cmd>lua require"telescope".extensions.dap.commands{}<CR>', "Commands" },
-    f = { '<Cmd>lua require"telescope".extensions.dap.configurations{}<CR>', "Configurations" },
-    r = { '<Cmd>lua require"telescope".extensions.dap.list_breakpoints{}<CR>', "List breakpoints" },
-    v = { '<Cmd>lua require"telescope".extensions.dap.variables{}<CR>', "Variables" },
-    m = { '<Cmd>lua require"telescope".extensions.dap.frames{}<CR>', "Frames" },
+    r = {
+      name = "Refactor",
+      i = { [[<cmd>lua require('refactoring').refactor('Inline Variable')<cr>]], "Inline Variable" },
+      b = { [[<cmd>lua require('refactoring').refactor('Exract Block')<cr>]], "Extract Block" },
+      B = { [[<cmd>lua require('refactoring').refactor('Exract Block To File')<cr>]], "Extract Block to File" },
+      P = {
+        [[<cmd>lua require('refactoring').debug.printf({below = false})<cr>]],
+        "Debug Print",
+      },
+      p = {
+        [[<cmd>lua require('refactoring').debug.print_var({normal = true})<cr>]],
+        "Debug Print Variable",
+      },
+      c = { [[<cmd>lua require('refactoring').debug.cleanup({})<cr>]], "Debug Cleanup" },
+    },
 
-    -- Refactoring print
-    P = { ':lua require("refactoring").debug.printf({below = false})<CR>', "Print" },
-    C = { ':lua require("refactoring").debug.cleanup({})<CR>', "Clear print" },
-  },
-}
+    s = {
+      name = "Search",
+      o = { [[ <Esc><Cmd>lua require('spectre').open()<CR>]], "Open" },
+      c = { [[ <Esc><Cmd>lua require('utils.cht').cht_input()<CR>]], "cht.sh" },
+      s = { [[ <Esc><Cmd>lua require('utils.term').so()<CR>]], "Stack Overflow" },
+      w = { [[ <Esc><Cmd>lua require("telescope").extensions.arecibo.websearch()<CR>]], "Web" },
+    },
 
-local dap_vimspector_mappings = {
-  d = {
-    name = "DAP",
-    b = { "<Cmd>call vimspector#ToggleBreakpoint()<CR>", "Toggle breakpoint" },
-    c = { "<Cmd>call vimspector#Continue()<CR>", "Continue" },
-    s = { "<Cmd>call vimspector#StepOver()<CR>", "Step over" },
-    i = { "<Cmd>call vimspector#StepInto()<CR>", "Step into" },
-    o = { "<Cmd>call vimspector#StepOut()<CR>", "Step out" },
-    u = { "<Cmd>call vimspector#Launch()<CR>", "Launch" },
-    f = { "<Cmd>call vimspector#GetConfigurations()<CR>", "Configurations" },
-    r = { "<Cmd>call vimspector#ListBreakPoints()<CR>", "List breakpoints" },
-    v = { "<Cmd>call vimspector#AddWatch()<CR>", "Add watch" },
-    m = { "<Cmd>call vimspector#Evaluate()<CR>", "Evaluate" },
+    v = {
+      name = "Vimspector",
+      G = { "<cmd>lua require('config.vimspector').generate_debug_profile()<cr>", "Generate Debug Profile" },
+      I = { "<cmd>VimspectorInstall<cr>", "Install" },
+      U = { "<cmd>VimspectorUpdate<cr>", "Update" },
+      R = { "<cmd>call vimspector#RunToCursor()<cr>", "Run to Cursor" },
+      c = { "<cmd>call vimspector#Continue()<cr>", "Continue" },
+      i = { "<cmd>call vimspector#StepInto()<cr>", "Step Into" },
+      o = { "<cmd>call vimspector#StepOver()<cr>", "Step Over" },
+      s = { "<cmd>call vimspector#Launch()<cr>", "Start" },
+      t = { "<cmd>call vimspector#ToggleBreakpoint()<cr>", "Toggle Breakpoint" },
+      u = { "<cmd>call vimspector#StepOut()<cr>", "Step Out" },
+      S = { "<cmd>call vimspector#Stop()<cr>", "Stop" },
+      r = { "<cmd>call vimspector#Restart()<cr>", "Restart" },
+      x = { "<cmd>VimspectorReset<cr>", "Reset" },
+      H = { "<cmd>lua require('config.vimspector').toggle_human_mode()<cr>", "Toggle HUMAN mode" },
+    },
 
-    -- Refactoring print
-    P = { ':lua require("refactoring").debug.printf({below = false})<CR>', "Print" },
-    C = { ':lua require("refactoring").debug.cleanup({})<CR>', "Clear print" },
-  },
+    x = {
+      name = "External",
+      p = { "<cmd>lua require('utils.term').project_info_toggle()<CR>", "Project Info" },
+      s = { "<cmd>lua require('utils.term').system_info_toggle()<CR>", "System Info" },
+      c = { "<cmd>lua require('utils.term').cht()<CR>", "Cheatsheet" },
+      i = { "<cmd>lua require('utils.term').interactive_cheatsheet_toggle()<CR>", "Interactive Cheatsheet" },
+    },
 
-  --- REFACTORING WIP
-  --
-  -- Vimspector
-  -- ["<F5>"] = {name = "Vimspector - Launch"},
-  -- ["<F8>"] = {name = "Vimspector - Run to Cursor"},
-  -- ["<F9>"] = {name = "Vimspector - Cond. Breakpoint"},
+    z = {
+      name = "System",
+      -- c = { "<cmd>PackerCompile<cr>", "Compile" },
+      c = { "<cmd>Telescope neoclip<cr>", "Clipboard" },
+      d = { "<cmd>DiffviewOpen<cr>", "Diff View Open" },
+      D = { "<cmd>DiffviewClose<cr>", "Diff View Close" },
+      i = { "<cmd>PackerInstall<cr>", "Install" },
+      m = { "<cmd>lua require('telescope').extensions.macroscope.default()<cr>", "Macros" },
+      p = { "<cmd>PackerProfile<cr>", "Profile" },
+      s = { "<cmd>PackerSync<cr>", "Sync" },
+      S = { "<cmd>PackerStatus<cr>", "Status" },
+      u = { "<cmd>PackerUpdate<cr>", "Update" },
+      -- x = { "<cmd>cd %:p:h<cr>", "Change Directory" },
+      -- x = { "<cmd>set autochdir<cr>", "Auto ChDir" },
+      x = { "<cmd>Telescope cder<cr>", "Change Directory" },
+      e = { "!!$SHELL<CR>", "Execute line" },
+      W = { "<cmd>lua require('utils.session').toggle_session()<cr>", "Toggle Workspace Saving" },
+      w = { "<cmd>lua require('utils.session').list_session()<cr>", "Restore Workspace" },
+      z = { "<cmd>lua require'telescope'.extensions.zoxide.list{}<cr>", "Zoxide" },
+    },
 
-  --     utils.map_key('n', '<leader>dsc',
-  --                   '<cmd>lua require"dap.ui.variables".scopes()<CR>')
-  --     utils.map_key('n', '<leader>dhh',
-  --                   '<cmd>lua require"dap.ui.variables".hover()<CR>')
-  --     utils.map_key('v', '<leader>dhv',
-  --                   '<cmd>lua require"dap.ui.variables".visual_hover()<CR>')
+    g = {
+      name = "Git",
+      b = { "<cmd>GitBlameToggle<CR>", "Blame" },
+      c = { "<cmd>lua require('utils.term').git_commit_toggle()<CR>", "Conventional Commits" },
+      p = { "<cmd>Git push<CR>", "Push" },
+      s = { "<cmd>Neogit<CR>", "Status - Neogit" },
+      S = { "<cmd>Git<CR>", "Status - Fugitive" },
+      y = {
+        "<cmd>lua require'gitlinker'.get_buf_range_url('n', {action_callback = require'gitlinker.actions'.open_in_browser})<cr>",
+        "Link",
+      },
+      g = { "<cmd>lua require('telescope').extensions.gh.gist()<CR>", "Gist" },
+      z = { "<cmd>lua require('utils.term').git_client_toggle()<CR>", "Git TUI" },
+      h = { name = "Hunk" },
+      t = { name = "Toggle" },
+      x = { "<cmd>lua require('telescope.builtin').git_branches()<cr>", "Switch Branch" },
+      -- g = {
+      --   name = "+Github",
+      --   c = {
+      --     name = "+Commits",
+      --     c = { "<cmd>GHCloseCommit<cr>", "Close" },
+      --     e = { "<cmd>GHExpandCommit<cr>", "Expand" },
+      --     o = { "<cmd>GHOpenToCommit<cr>", "Open To" },
+      --     p = { "<cmd>GHPopOutCommit<cr>", "Pop Out" },
+      --     z = { "<cmd>GHCollapseCommit<cr>", "Collapse" },
+      --   },
+      --   i = {
+      --     name = "+Issues",
+      --     p = { "<cmd>GHPreviewIssue<cr>", "Preview" },
+      --   },
+      --   l = {
+      --     name = "+Litee",
+      --     t = { "<cmd>LTPanel<cr>", "Toggle Panel" },
+      --   },
+      --   r = {
+      --     name = "+Review",
+      --     b = { "<cmd>GHStartReview<cr>", "Begin" },
+      --     c = { "<cmd>GHCloseReview<cr>", "Close" },
+      --     d = { "<cmd>GHDeleteReview<cr>", "Delete" },
+      --     e = { "<cmd>GHExpandReview<cr>", "Expand" },
+      --     s = { "<cmd>GHSubmitReview<cr>", "Submit" },
+      --     z = { "<cmd>GHCollapseReview<cr>", "Collapse" },
+      --   },
+      --   p = {
+      --     name = "+Pull Request",
+      --     c = { "<cmd>GHClosePR<cr>", "Close" },
+      --     d = { "<cmd>GHPRDetails<cr>", "Details" },
+      --     e = { "<cmd>GHExpandPR<cr>", "Expand" },
+      --     o = { "<cmd>GHOpenPR<cr>", "Open" },
+      --     p = { "<cmd>GHPopOutPR<cr>", "PopOut" },
+      --     r = { "<cmd>GHRefreshPR<cr>", "Refresh" },
+      --     t = { "<cmd>GHOpenToPR<cr>", "Open To" },
+      --     z = { "<cmd>GHCollapsePR<cr>", "Collapse" },
+      --   },
+      --   t = {
+      --     name = "+Threads",
+      --     c = { "<cmd>GHCreateThread<cr>", "Create" },
+      --     n = { "<cmd>GHNextThread<cr>", "Next" },
+      --     t = { "<cmd>GHToggleThread<cr>", "Toggle" },
+      --   },
+      -- },
+    },
+  }
+  whichkey.register(keymap, opts)
+  legendary.bind_whichkey(keymap, opts, false)
+end
 
-  --     utils.map_key('n', '<leader>duh',
-  --                   '<cmd>lua require"dap.ui.widgets".hover()<CR>')
-  --     utils.map_key('n', '<leader>duf',
-  --                   "<cmd>lua local widgets=require'dap.ui.widgets';widgets.centered_float(widgets.scopes)<CR>")
+local function visual_keymap()
+  local keymap = {
+    g = {
+      name = "Git",
+      y = {
+        "<cmd>lua require'gitlinker'.get_buf_range_url('v', {action_callback = require'gitlinker.actions'.open_in_browser})<cr>",
+        "Link",
+      },
+    },
 
-  --     utils.map_key('n', '<leader>dsbr',
-  --                   '<cmd>lua require"dap".set_breakpoint(vim.fn.input("Breakpoint condition: "))<CR>')
-  --     utils.map_key('n', '<leader>dsbm',
-  --                   '<cmd>lua require"dap".set_breakpoint(nil, nil, vim.fn.input("Log point message: "))<CR>')
-  --     utils.map_key('n', '<leader>drl',
-  --                   '<cmd>lua require"dap".repl.run_last()<CR>')
-}
+    r = {
+      name = "Refactor",
+      f = { [[<cmd>lua require('refactoring').refactor('Extract Function')<cr>]], "Extract Function" },
+      F = {
+        [[ <cmd>lua require('refactoring').refactor('Extract Function to File')<cr>]],
+        "Extract Function to File",
+      },
+      v = { [[<cmd>lua require('refactoring').refactor('Extract Variable')<cr>]], "Extract Variable" },
+      i = { [[<cmd>lua require('refactoring').refactor('Inline Variable')<cr>]], "Inline Variable" },
+      r = { [[<cmd>lua require('telescope').extensions.refactoring.refactors()<cr>]], "Refactor" },
+      d = { [[<cmd>lua require('refactoring').debug.print_var({})<cr>]], "Debug Print Var" },
+    },
+  }
 
-function M.register_lsp(client)
-  local wk = require "which-key"
-  wk.register(lsp_mappings, opts)
+  whichkey.register(keymap, v_opts)
+  legendary.bind_whichkey(keymap, v_opts, false)
+end
 
-  for _, m in pairs(lsp_mappings_opts) do
-    local capability, key = unpack(m)
-    if client.resolved_capabilities[capability] then
-      wk.register(key, opts)
+local function code_keymap()
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = "*",
+    callback = function()
+      vim.schedule(CodeRunner)
+    end,
+  })
+
+  function CodeRunner()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
+    local fname = vim.fn.expand "%:p:t"
+    local keymap_c = {} -- normal key map
+    local keymap_c_v = {} -- visual key map
+
+    if ft == "python" then
+      keymap_c = {
+        name = "Code",
+        -- r = { "<cmd>update<CR><cmd>exec '!python3' shellescape(@%, 1)<cr>", "Run" },
+        -- r = { "<cmd>update<CR><cmd>TermExec cmd='python3 %'<cr>", "Run" },
+        r = {
+          "<cmd>update<cr><cmd>lua require('utils.term').open_term([[python3 ]] .. vim.fn.shellescape(vim.fn.getreg('%'), 1), {direction = 'float'})<cr>",
+          "Run",
+        },
+        m = { "<cmd>TermExec cmd='nodemon -e py %'<cr>", "Monitor" },
+      }
+    elseif ft == "lua" then
+      keymap_c = {
+        name = "Code",
+        r = { "<cmd>luafile %<cr>", "Run" },
+      }
+    elseif ft == "rust" then
+      keymap_c = {
+        name = "Code",
+        r = { "<cmd>execute 'Cargo run' | startinsert<cr>", "Run" },
+        D = { "<cmd>RustDebuggables<cr>", "Debuggables" },
+        h = { "<cmd>RustHoverActions<cr>", "Hover Actions" },
+        R = { "<cmd>RustRunnables<cr>", "Runnables" },
+      }
+    elseif ft == "go" then
+      keymap_c = {
+        name = "Code",
+        r = { "<cmd>GoRun<cr>", "Run" },
+      }
+    elseif ft == "typescript" or ft == "typescriptreact" or ft == "javascript" or ft == "javascriptreact" then
+      keymap_c = {
+        name = "Code",
+        o = { "<cmd>TypescriptOrganizeImports<cr>", "Organize Imports" },
+        r = { "<cmd>TypescriptRenameFile<cr>", "Rename File" },
+        i = { "<cmd>TypescriptAddMissingImports<cr>", "Import Missing" },
+        F = { "<cmd>TypescriptFixAll<cr>", "Fix All" },
+        u = { "<cmd>TypescriptRemoveUnused<cr>", "Remove Unused" },
+        R = { "<cmd>lua require('config.neotest').javascript_runner()<cr>", "Choose Test Runner" },
+        -- s = { "<cmd>2TermExec cmd='yarn start'<cr>", "Yarn Start" },
+        -- t = { "<cmd>2TermExec cmd='yarn test'<cr>", "Yarn Test" },
+      }
+    elseif ft == "java" then
+      keymap_c = {
+        name = "Code",
+        o = { "<cmd>lua require'jdtls'.organize_imports()<cr>", "Organize Imports" },
+        v = { "<cmd>lua require('jdtls').extract_variable()<cr>", "Extract Variable" },
+        c = { "<cmd>lua require('jdtls').extract_constant()<cr>", "Extract Constant" },
+        t = { "<cmd>lua require('jdtls').test_class()<cr>", "Test Class" },
+        n = { "<cmd>lua require('jdtls').test_nearest_method()<cr>", "Test Nearest Method" },
+      }
+      keymap_c_v = {
+        name = "Code",
+        v = { "<cmd>lua require('jdtls').extract_variable(true)<cr>", "Extract Variable" },
+        c = { "<cmd>lua require('jdtls').extract_constant(true)<cr>", "Extract Constant" },
+        m = { "<cmd>lua require('jdtls').extract_method(true)<cr>", "Extract Method" },
+      }
+    end
+
+    if fname == "package.json" then
+      keymap_c.v = { "<cmd>lua require('package-info').show()<cr>", "Show Version" }
+      keymap_c.c = { "<cmd>lua require('package-info').change_version()<cr>", "Change Version" }
+      -- keymap_c.s = { "<cmd>2TermExec cmd='yarn start'<cr>", "Yarn Start" }
+      -- keymap_c.t = { "<cmd>2TermExec cmd='yarn test'<cr>", "Yarn Test" }
+    end
+
+    if fname == "Cargo.toml" then
+      keymap_c.u = { "<cmd>lua require('crates').upgrade_all_crates()<cr>", "Upgrade All Crates" }
+    end
+
+    if next(keymap_c) ~= nil then
+      local k = { c = keymap_c }
+      local o = { mode = "n", silent = true, noremap = true, buffer = bufnr, prefix = "<leader>", nowait = true }
+      whichkey.register(k, o)
+      legendary.bind_whichkey(k, o, false)
+    end
+
+    if next(keymap_c_v) ~= nil then
+      local k = { c = keymap_c_v }
+      local o = { mode = "v", silent = true, noremap = true, buffer = bufnr, prefix = "<leader>", nowait = true }
+      whichkey.register(k, o)
+      legendary.bind_whichkey(k, o, false)
     end
   end
 end
 
-function M.register_dap_vimspector()
-  local wk = require "which-key"
-  wk.register({
-    ["dx"] = {
-      ":lua require('config.whichkey').register_dap_nvim_dap()<CR>",
-      "Switch to nvim-dap",
-    },
-  }, opts)
-  wk.register(dap_vimspector_mappings, opts)
-  vim.g.my_debugger = "v"
-  vim.g.vimspector_enable_mappings = "HUMAN"
-end
-
-function M.register_dap_nvim_dap()
-  local wk = require "which-key"
-  wk.register({
-    ["dx"] = { ":lua require('config.whichkey').register_dap_vimspector()<CR>", "Switch to vimspector" },
-  }, opts)
-  wk.register(dap_nvim_dap_mappings, opts)
-  vim.g.my_debugger = "d"
-  vim.g.vimspector_enable_mappings = ""
-end
-
-function M.register_dap()
-  if vim.g.my_debugger == "v" then
-    M.register_dap_vimspector()
-  else
-    M.register_dap_nvim_dap()
-  end
-end
-
 function M.setup()
-  local wk = require "which-key"
-  wk.setup {}
-  wk.register(mappings, opts)
-  wk.register(vmappings, vopts)
-  wk.register(xmappings, xopts)
+  normal_keymap()
+  visual_keymap()
+  code_keymap()
 end
 
 return M
