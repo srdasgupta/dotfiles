@@ -178,6 +178,7 @@ function M.setup()
   telescope.load_extension "gh"
   telescope.load_extension "zoxide"
   telescope.load_extension "cder"
+  telescope.load_extension "git_worktree"
   -- telescope.load_extension "ui-select"
   -- telescope.load_extension "flutter" -- Flutter
 end

@@ -193,6 +193,7 @@ function M.setup()
 
     use { "Shougo/deoplete.nvim", cmd = "UpdateRemotePlugins" }
     -- use { "beeender/Comrade" }
+
     -- Git
     use {
       "TimUntersberger/neogit",
@@ -284,6 +285,7 @@ function M.setup()
     use { "knsh14/vim-github-link", cmd = { "GetCommitLink", "GetCurrentBranchLink", "GetCurrentCommitLink" } }
     use { "segeljakt/vim-silicon", cmd = { "Silicon" } }
     use { "mattn/vim-gist", opt = true, requires = { "mattn/webapi-vim" }, cmd = { "Gist" } }
+    use { "ThePrimeagen/git-worktree.nvim" }
 
     -- WhichKey
     use {
@@ -586,19 +588,19 @@ function M.setup()
       },
     }
 
-    use {
-      "ray-x/navigator.lua",
-      requires = {
-        { "ray-x/guihua.lua", run = "cd lua/fzy && make" },
-        { "neovim/nvim-lspconfig" },
-        { "nvim-treesitter/nvim-treesitter" },
-      },
-      config = function()
-        require("navigator").setup {
-          mason = true,
-        }
-      end,
-    }
+    --use {
+    --  "ray-x/navigator.lua",
+    --  requires = {
+    --    { "ray-x/guihua.lua", run = "cd lua/fzy && make" },
+    --    { "neovim/nvim-lspconfig" },
+    --    { "nvim-treesitter/nvim-treesitter" },
+    --  },
+    --  config = function()
+    --    require("navigator").setup {
+    --      mason = true,
+    --    }
+    --  end,
+    --}
 
     -- Cscope maps
     use {

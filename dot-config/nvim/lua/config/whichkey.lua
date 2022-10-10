@@ -280,6 +280,11 @@ local function normal_keymap()
       p = { "<cmd>Git push<CR>", "Push" },
       s = { "<cmd>Neogit<CR>", "Status - Neogit" },
       S = { "<cmd>Git<CR>", "Status - Fugitive" },
+      w = {
+        name = "+git-worktree",
+        c = { "<cmd>lua require('telescope').extensions.git_worktree.create_git_worktree()<CR>", "Create worktree" },
+        s = { "<cmd>lua require('telescope').extensions.git_worktree.git_worktree()<CR>", "Switch or Delete worktree" },
+      },
       y = {
         "<cmd>lua require'gitlinker'.get_buf_range_url('n', {action_callback = require'gitlinker.actions'.open_in_browser})<cr>",
         "Link",
