@@ -36,7 +36,9 @@ local function normal_keymap()
 
   keymap_f = {
     name = "Find",
-    f = { "<cmd>lua require('utils.finder').find_files()<cr>", "Files" },
+    --f = { "<cmd>lua require('utils.finder').find_files()<cr>", "Files" },
+    p = { "<cmd>lua require('telescope.builtin').git_files()<cr>", "Git Files" },
+    f = { "<cmd>lua require('telescope.builtin').find_files()<cr>", "Files" },
     d = { "<cmd>lua require('utils.finder').find_dotfiles()<cr>", "Dotfiles" },
     b = { "<cmd>lua require('telescope.builtin').buffers()<cr>", "Buffers" },
     h = { "<cmd>lua require('telescope.builtin').help_tags()<cr>", "Help" },
@@ -240,7 +242,7 @@ local function normal_keymap()
       i = { "<cmd>lua require('utils.term').interactive_cheatsheet_toggle()<CR>", "Interactive Cheatsheet" },
     },
 
-    z = {
+    y = {
       name = "System",
       -- c = { "<cmd>PackerCompile<cr>", "Compile" },
       c = { "<cmd>Telescope neoclip<cr>", "Clipboard" },
@@ -261,6 +263,16 @@ local function normal_keymap()
       z = { "<cmd>lua require'telescope'.extensions.zoxide.list{}<cr>", "Zoxide" },
     },
 
+    z = {
+      name = "Zen & Twilight",
+      a = { "<cmd>TZAtaraxis<CR>", "Toggle Ataraxis" },
+      m = { "<cmd>TZMinimalist<CR>", "Toggle Minimalist" },
+      n = { "<cmd>TZNarrow<CR>", "Toggle Narrow" },
+      f = { "<cmd>TZFocus<CR>", "Toggle Focus" },
+      t = { "<cmd>Twilight<CR>", "Twilight" },
+      z = { "<cmd>ZenMode<CR>", "ZenMode" },
+    },
+
     g = {
       name = "Git",
       b = { "<cmd>GitBlameToggle<CR>", "Blame" },
@@ -272,56 +284,56 @@ local function normal_keymap()
         "<cmd>lua require'gitlinker'.get_buf_range_url('n', {action_callback = require'gitlinker.actions'.open_in_browser})<cr>",
         "Link",
       },
-      g = { "<cmd>lua require('telescope').extensions.gh.gist()<CR>", "Gist" },
+      i = { "<cmd>lua require('telescope').extensions.gh.gist()<CR>", "Gist" },
       z = { "<cmd>lua require('utils.term').git_client_toggle()<CR>", "Git TUI" },
       h = { name = "Hunk" },
       t = { name = "Toggle" },
       x = { "<cmd>lua require('telescope.builtin').git_branches()<cr>", "Switch Branch" },
-      -- g = {
-      --   name = "+Github",
-      --   c = {
-      --     name = "+Commits",
-      --     c = { "<cmd>GHCloseCommit<cr>", "Close" },
-      --     e = { "<cmd>GHExpandCommit<cr>", "Expand" },
-      --     o = { "<cmd>GHOpenToCommit<cr>", "Open To" },
-      --     p = { "<cmd>GHPopOutCommit<cr>", "Pop Out" },
-      --     z = { "<cmd>GHCollapseCommit<cr>", "Collapse" },
-      --   },
-      --   i = {
-      --     name = "+Issues",
-      --     p = { "<cmd>GHPreviewIssue<cr>", "Preview" },
-      --   },
-      --   l = {
-      --     name = "+Litee",
-      --     t = { "<cmd>LTPanel<cr>", "Toggle Panel" },
-      --   },
-      --   r = {
-      --     name = "+Review",
-      --     b = { "<cmd>GHStartReview<cr>", "Begin" },
-      --     c = { "<cmd>GHCloseReview<cr>", "Close" },
-      --     d = { "<cmd>GHDeleteReview<cr>", "Delete" },
-      --     e = { "<cmd>GHExpandReview<cr>", "Expand" },
-      --     s = { "<cmd>GHSubmitReview<cr>", "Submit" },
-      --     z = { "<cmd>GHCollapseReview<cr>", "Collapse" },
-      --   },
-      --   p = {
-      --     name = "+Pull Request",
-      --     c = { "<cmd>GHClosePR<cr>", "Close" },
-      --     d = { "<cmd>GHPRDetails<cr>", "Details" },
-      --     e = { "<cmd>GHExpandPR<cr>", "Expand" },
-      --     o = { "<cmd>GHOpenPR<cr>", "Open" },
-      --     p = { "<cmd>GHPopOutPR<cr>", "PopOut" },
-      --     r = { "<cmd>GHRefreshPR<cr>", "Refresh" },
-      --     t = { "<cmd>GHOpenToPR<cr>", "Open To" },
-      --     z = { "<cmd>GHCollapsePR<cr>", "Collapse" },
-      --   },
-      --   t = {
-      --     name = "+Threads",
-      --     c = { "<cmd>GHCreateThread<cr>", "Create" },
-      --     n = { "<cmd>GHNextThread<cr>", "Next" },
-      --     t = { "<cmd>GHToggleThread<cr>", "Toggle" },
-      --   },
-      -- },
+      g = {
+        name = "+Github",
+        c = {
+          name = "+Commits",
+          c = { "<cmd>GHCloseCommit<cr>", "Close" },
+          e = { "<cmd>GHExpandCommit<cr>", "Expand" },
+          o = { "<cmd>GHOpenToCommit<cr>", "Open To" },
+          p = { "<cmd>GHPopOutCommit<cr>", "Pop Out" },
+          z = { "<cmd>GHCollapseCommit<cr>", "Collapse" },
+        },
+        i = {
+          name = "+Issues",
+          p = { "<cmd>GHPreviewIssue<cr>", "Preview" },
+        },
+        l = {
+          name = "+Litee",
+          t = { "<cmd>LTPanel<cr>", "Toggle Panel" },
+        },
+        r = {
+          name = "+Review",
+          b = { "<cmd>GHStartReview<cr>", "Begin" },
+          c = { "<cmd>GHCloseReview<cr>", "Close" },
+          d = { "<cmd>GHDeleteReview<cr>", "Delete" },
+          e = { "<cmd>GHExpandReview<cr>", "Expand" },
+          s = { "<cmd>GHSubmitReview<cr>", "Submit" },
+          z = { "<cmd>GHCollapseReview<cr>", "Collapse" },
+        },
+        p = {
+          name = "+Pull Request",
+          c = { "<cmd>GHClosePR<cr>", "Close" },
+          d = { "<cmd>GHPRDetails<cr>", "Details" },
+          e = { "<cmd>GHExpandPR<cr>", "Expand" },
+          o = { "<cmd>GHOpenPR<cr>", "Open" },
+          p = { "<cmd>GHPopOutPR<cr>", "PopOut" },
+          r = { "<cmd>GHRefreshPR<cr>", "Refresh" },
+          t = { "<cmd>GHOpenToPR<cr>", "Open To" },
+          z = { "<cmd>GHCollapsePR<cr>", "Collapse" },
+        },
+        t = {
+          name = "+Threads",
+          c = { "<cmd>GHCreateThread<cr>", "Create" },
+          n = { "<cmd>GHNextThread<cr>", "Next" },
+          t = { "<cmd>GHToggleThread<cr>", "Toggle" },
+        },
+      },
     },
   }
   whichkey.register(keymap, opts)

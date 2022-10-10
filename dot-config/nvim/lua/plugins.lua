@@ -165,6 +165,34 @@ function M.setup()
     -- Better Netrw
     use { "tpope/vim-vinegar", event = "BufReadPre" }
 
+    -- Focus mode for coding: zen & twilight
+    use {
+      "Pocco81/true-zen.nvim",
+      config = function()
+        require("true-zen").setup {
+          -- your config goes here
+          -- or just leave it empty :)
+        }
+      end,
+    }
+    use {
+      "folke/zen-mode.nvim",
+      config = function()
+        require("config.focus").zen()
+      end,
+    }
+    use {
+      "folke/twilight.nvim",
+      config = function()
+        require("config.focus").twilight()
+      end,
+      requires = {
+        "nvim-treesitter/nvim-treesitter",
+      },
+    }
+
+    use { "Shougo/deoplete.nvim", cmd = "UpdateRemotePlugins" }
+    -- use { "beeender/Comrade" }
     -- Git
     use {
       "TimUntersberger/neogit",
@@ -521,7 +549,7 @@ function M.setup()
             require("spellsitter").setup()
           end,
         },
-        { "nvim-treesitter/nvim-treesitter-context", event = "BufReadPre", disable = true },
+        { "nvim-treesitter/nvim-treesitter-context", event = "BufReadPre", disable = false },
         { "mfussenegger/nvim-treehopper", wants = { "hop.nvim" }, module = { "tsht" } },
         {
           "m-demare/hlargs.nvim",
@@ -531,6 +559,7 @@ function M.setup()
         },
         -- { "yioneko/nvim-yati", event = "BufReadPre" },
       },
+      disable = false,
     }
 
     -- Code Navigator
@@ -557,19 +586,19 @@ function M.setup()
       },
     }
 
-    --use {
-    --  "ray-x/navigator.lua",
-    --  requires = {
-    --    { "ray-x/guihua.lua", run = "cd lua/fzy && make" },
-    --    { "neovim/nvim-lspconfig" },
-    --    { "nvim-treesitter/nvim-treesitter" },
-    --  },
-    --  config = function()
-    --    require("navigator").setup({
-    --      mason = true,
-    --    })
-    --  end,
-    --}
+    use {
+      "ray-x/navigator.lua",
+      requires = {
+        { "ray-x/guihua.lua", run = "cd lua/fzy && make" },
+        { "neovim/nvim-lspconfig" },
+        { "nvim-treesitter/nvim-treesitter" },
+      },
+      config = function()
+        require("navigator").setup {
+          mason = true,
+        }
+      end,
+    }
 
     -- Cscope maps
     use {

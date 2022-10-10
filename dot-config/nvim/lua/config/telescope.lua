@@ -77,14 +77,24 @@ function M.setup()
       prompt_prefix = icons.ui.Telescope .. " ",
       selection_caret = " ",
       -- path_display = { "smart" },
-      buffer_previewer_maker = preview_maker,
+      selection_strategy = "reset",
+      sorting_strategy = "ascending",
+      layout_strategy = "horizontal",
+      color_devicons = true,
+      file_sorter = require("telescope.sorters").get_fuzzy_file,
+      file_ignore_patterns = { "node_modules" },
+      generic_sorter = require("telescope.sorters").get_generic_fuzzy_sorter,
+      file_previewer = require("telescope.previewers").vim_buffer_cat.new,
+      grep_previewer = require("telescope.previewers").vim_buffer_vimgrep.new,
+      qflist_previewer = require("telescope.previewers").vim_buffer_qflist.new,
+      buffer_previewer_maker = require("telescope.previewers").buffer_previewer_maker,
       mappings = {
         i = {
           ["<C-j>"] = actions.move_selection_next,
           ["<C-k>"] = actions.move_selection_previous,
           ["<C-n>"] = actions.cycle_history_next,
           ["<C-p>"] = actions.cycle_history_prev,
-          ["<c-z>"] = trouble.open_with_trouble,
+          ["<C-z>"] = trouble.open_with_trouble,
         },
       },
       history = {
@@ -94,7 +104,7 @@ function M.setup()
     },
     pickers = {
       find_files = {
-        theme = "ivy",
+        -- theme = "ivy",
         mappings = {
           n = {
             ["y"] = nvb_actions.file_path,
@@ -105,7 +115,7 @@ function M.setup()
             ["<C-s>"] = nvb_actions.visidata,
           },
         },
-        hidden = true,
+        hidden = false,
         find_command = { "rg", "--files", "--hidden", "-g", "!.git" },
       },
       git_files = {
