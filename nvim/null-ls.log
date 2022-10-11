@@ -1,1 +1,0 @@
-[WARN  Thu Sep 22 23:44:31 2022] .../pack/packer/opt/null-ls.nvim/lua/null-ls/generators.lua:92: failed to run generator: ...m/site/pack/packer/opt/null-ls.nvim/lua/null-ls/loop.lua:165: failed to spawn command shellcheck: ENOTDIR: not a directory

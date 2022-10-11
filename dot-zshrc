@@ -168,11 +168,16 @@ if [ -x "$(command -v colorls)" ]; then
    alias ls="colorls --sd -A"
    alias la="colorls --dark -al"
 fi
-alias update="source ~/.zshrc"
+alias sz="source ~/.zshrc"
+alias t="tmux"
+alias ta="tmux attach-session -t "
+alias tl="tmux list-sessions"
 alias l="ls"
-# alias v="vim"
-alias v="nvim"
-alias nv="nvim"
+alias lp="ls -lrt"
+alias ll="ls -go"
+alias cl="clear"
+alias nvb="sh $HOME/Shubharanjan/code/ref-dotfiles/neovim-for-beginner/nvb.sh"
+alias v="$HOME/Shubharanjan/code/nvim-macos/bin/nvim"
 alias lv="$HOME/.local/bin/lvim"
 alias co="cd ~/Shubharanjan/code"
 alias gs="cd ~/Shubharanjan/code/go/src"
@@ -184,8 +189,8 @@ alias gli="cd ~/Shubharanjan/code/go/src/github.com/srdasgupta/interflake"
 alias mk="minikube"
 alias msl="mysql -uroot -h 127.0.0.1"
 alias ctags='/usr/local/bin/ctags'
-
-# docker aliases 
+alias lf='find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"'
+# docker aliases
 alias dk="docker"
 alias dki="docker image"
 alias dkil="docker image ls"
@@ -206,12 +211,16 @@ alias egc="eksctl get cluster"
 alias edc="eksctl delete cluster"
 alias ecn="eksctl create nodegroup"
 
+export PATH="/usr/local/bin:/usr/bin:$PATH"
+
 # go lang settings
 #export HOME=/Users/apple/Shubharanjan
 export GOPATH=/Users/apple/Shubharanjan/code/go
 export GOROOT=/usr/local/opt/go/libexec
 export GOBIN=$GOPATH/bin
 export GOPROXY=https://goproxy.cn,direct
+
+
 export PATH=$PATH:$GOPATH/bin
 export PATH=$PATH:$GOROOT/bin
 export PATH=$PATH:/Users/apple/Shubharanjan/code/istio-1.8.1/bin
@@ -224,6 +233,20 @@ export PATH=$PATH:/Users/apple/Shubharanjan/code/istio-1.8.1/bin
 
 #ZSH_DISABLE_COMPFIX=true
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=023'
+
+
+lg()
+{
+    export LAZYGIT_NEW_DIR_FILE=~/.lazygit/newdir
+
+    lazygit "$@"
+
+    if [ -f $LAZYGIT_NEW_DIR_FILE ]; then
+            cd "$(cat $LAZYGIT_NEW_DIR_FILE)"
+            rm -f $LAZYGIT_NEW_DIR_FILE > /dev/null
+    fi
+}
+
 
 
 # >>> conda initialize >>>
@@ -241,11 +264,22 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=023'
 #unset __conda_setup
 # <<< conda initialize <<<
 
-export PATH="/usr/local/bin:/usr/bin:$PATH"
 export PATH=$PATH:"/usr/local/Cellar/python@3.9/3.9.9/bin/"
 export PATH=$PATH:"/usr/local/git/"
 export PATH=$PATH:"$HOME/Shubharanjan/code/java/jdt-language-server-1.9.0-202203031534/"
 export PATH=$PATH:"$HOME/.cargo/bin"
 export PATH=$PATH:"$HOME/.local/bin/lvim"
+export PATH=$PATH:"$HOME/Library/Application Support/Coursier/bin"
 
 enable-fzf-tab
+ulimit -S -n 200048
+
+source $(dirname $(gem which colorls))/tab_complete.sh
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+export GRADLE_HOME="$(brew info gradle | grep /usr/local/Cellar/gradle | awk '{print $1}')"
+

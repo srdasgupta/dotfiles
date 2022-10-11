@@ -286,7 +286,14 @@ function M.setup()
     use { "segeljakt/vim-silicon", cmd = { "Silicon" } }
     use { "mattn/vim-gist", opt = true, requires = { "mattn/webapi-vim" }, cmd = { "Gist" } }
     use { "ThePrimeagen/git-worktree.nvim" }
-
+    use {
+      'rlch/github-notifications.nvim',
+      config = [[require('config.github-notifications')]],
+      requires = {
+        'nvim-lua/plenary.nvim',
+        'nvim-telescope/telescope.nvim',
+      },
+    }
     -- WhichKey
     use {
       "folke/which-key.nvim",
