@@ -287,11 +287,11 @@ function M.setup()
     use { "mattn/vim-gist", opt = true, requires = { "mattn/webapi-vim" }, cmd = { "Gist" } }
     use { "ThePrimeagen/git-worktree.nvim" }
     use {
-      'rlch/github-notifications.nvim',
-      config = [[require('config.github-notifications')]],
+      "rlch/github-notifications.nvim",
+      -- config = [[require('config.github-notifications')]],
       requires = {
-        'nvim-lua/plenary.nvim',
-        'nvim-telescope/telescope.nvim',
+        "nvim-lua/plenary.nvim",
+        "nvim-telescope/telescope.nvim",
       },
     }
     -- WhichKey
